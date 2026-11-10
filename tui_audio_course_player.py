@@ -459,6 +459,7 @@ class TUIExplorer:
         self.current_dir = self.start_dir
         self.cursor = 0
         self.selected_file = None
+        self.needs_clear = True  # Flag to indicate screen needs clearing
         
         # Audio player with speed control
         self.player = AudioPlayer(self)
@@ -528,6 +529,11 @@ class TUIExplorer:
         last_update_time = time.time()
         
         while True:
+            # Clear screen if needed (after directory change)
+            if self.needs_clear:
+                stdscr.clear()
+                self.needs_clear = False
+            
             items = self.get_items()
             height, width = stdscr.getmaxyx()
             
@@ -637,6 +643,7 @@ class TUIExplorer:
                         self.cursor = 0
                         # Reset waveform when entering new directory
                         self.waveform.waveform_data = None
+                        self.needs_clear = True
                     else:
                         self.selected_file = selected
                         self._open_file(selected)
@@ -649,6 +656,7 @@ class TUIExplorer:
                     self.cursor = 0
                     # Reset waveform when going back
                     self.waveform.waveform_data = None
+                    self.needs_clear = True
                 else:
                     # At root, ESC to quit
                     if key == 27:
@@ -686,6 +694,7 @@ class TUIExplorer:
                 self.current_dir = self.start_dir
                 self.cursor = 0
                 self.waveform.waveform_data = None
+                self.needs_clear = True
             
     def _draw_waveform(self, stdscr, width, height, start_y):
         """Draw the waveform visualization."""
