@@ -28,24 +28,24 @@ TUI Audio Course Player is a **text-based user interface** application that help
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  TUI Audio Course Player - /home/user/courses/HSK-3        │
-│  ↑↓ Navigate  → Enter  ← Back  p Play  s Stop  +/= +Speed │
+│  TUI Audio Course Player - /home/user/courses/HSK-3         │
+│  ↑↓ Navigate  → Enter  ← Back  p Play  s Stop  +/= +Speed   │
 ├─────────────────────────────────────────────────────────────┤
-│  📁 audio/                                                    │
-│  📁 documents/                                                │
-│  📄 lesson-01.mp3   ★★★                                    │
-│  📄 lesson-02.mp3                                            │
-│  📄 lesson-03.mp3                                            │
+│  📁 audio/                                                  │
+│  📁 documents/                                              │
+│  📄 lesson-01.mp3   ★★★                                     │
+│  📄 lesson-02.mp3                                           │
+│  📄 lesson-03.mp3                                           │
 ├─────────────────────────────────────────────────────────────┤
-│  Waveform Visualization                                      │
-│  ██        ██████    ██    ████████  ██                      │
-│  ██        ██████    ██    ████████  ██                      │
-│  ██████    ██████    ██    ████████  ██                      │
-│  ██████    ██████    ██    ████████  ██                      │
-│                             ▼                              │
+│  Waveform Visualization                                     │
+│  ██        ██████    ██    ████████  ██                     │
+│  ██        ██████    ██    ████████  ██                     │
+│  ██████    ██████    ██    ████████  ██                     │
+│  ██████    ██████    ██    ████████  ██                     │
+│                             ▼                               │
 ├─────────────────────────────────────────────────────────────┤
 │  Speed: 0.75x | Playing: 1:23 / 3:45 | 35%                  │
-│  [████████░░░░░░░░░░░░░░] 35%                           │
+│  [████████░░░░░░░░░░░░░░] 35%                               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
