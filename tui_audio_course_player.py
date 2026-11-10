@@ -306,7 +306,6 @@ class AudioPlayer:
         self.speed = 1.0
         self.playback_thread = None
         self.stop_event = threading.Event()
-        self.pause_event = threading.Event()
         self.start_time = 0
         self.base_duration = 0.0
         
@@ -330,13 +329,20 @@ class AudioPlayer:
     def _play_with_pygame(self, file_path):
         """Play audio using pygame."""
         try:
+            # Stop any current playback
+            pygame.mixer.music.stop()
+            
+            # Load and get duration
             sound = pygame.mixer.Sound(file_path)
-            self.duration = sound.get_length()
-            self.base_duration = self.duration
-            sound.play()
+            self.base_duration = sound.get_length()
+            self.duration = self.base_duration
+            
+            # Load into music player
+            pygame.mixer.music.load(file_path)
+            pygame.mixer.music.play()
             
             # Start position update thread
-            self.playback_thread = threading.Thread(target=self._update_position_pygame, args=(sound,))
+            self.playback_thread = threading.Thread(target=self._update_position_pygame)
             self.playback_thread.daemon = True
             self.playback_thread.start()
         except Exception as e:
@@ -347,7 +353,11 @@ class AudioPlayer:
         """Play audio using pydub with speed control."""
         if not PYDUB_AVAILABLE:
             print("pydub not available for speed control. Install with: pip install pydub ffmpeg-python", file=sys.stderr)
+            # Reset speed to 1.0 and use pygame
+            old_speed = self.speed
+            self.speed = 1.0
             self._play_with_pygame(file_path)
+            self.speed = old_speed
             return
         
         try:
@@ -359,6 +369,9 @@ class AudioPlayer:
             if self.speed != 1.0:
                 audio = audio.speedup(playback_speed=self.speed)
             
+            # Stop pygame music to avoid conflicts
+            pygame.mixer.music.stop()
+            
             self.playback_thread = threading.Thread(target=self._play_pydub_thread, args=(audio,))
             self.playback_thread.daemon = True
             self.playback_thread.start()
@@ -369,35 +382,35 @@ class AudioPlayer:
     def _play_pydub_thread(self, audio):
         """Thread function to play audio with pydub."""
         try:
+            self.start_time = time.time()
             play(audio)
+            # Update position to end
+            self.current_position = self.duration
         except Exception as e:
             print(f"Playback error: {e}", file=sys.stderr)
         finally:
             self.is_playing = False
             self.is_paused = False
     
-    def _update_position_pygame(self, sound):
+    def _update_position_pygame(self):
         """Update current position based on pygame playback."""
         while self.is_playing and not self.stop_event.is_set():
             if not self.is_paused:
-                # Get position from pygame
-                try:
-                    pos_ms = pygame.mixer.music.get_pos()
-                    if pos_ms >= 0:
-                        self.current_position = pos_ms / 1000.0
-                    else:
-                        # If get_pos returns -1, use elapsed time
-                        self.current_position = (time.time() - self.start_time) * self.speed
-                except:
-                    self.current_position = (time.time() - self.start_time) * self.speed
+                # Get position from pygame - use elapsed time for reliability
+                elapsed = time.time() - self.start_time
+                self.current_position = elapsed * self.speed
                 
-                # Check if finished
-                if self.current_position >= self.duration:
+                # Check if finished (pygame.mixer.music.get_pos() is unreliable for MP3)
+                if self.duration > 0 and self.current_position >= self.duration:
                     self.is_playing = False
                     self.current_position = self.duration
                     break
+            else:
+                # If paused, keep position but don't update
+                time.sleep(0.1)
+                continue
             
-            time.sleep(0.1)
+            time.sleep(0.05)  # More frequent updates for smoother waveform
     
     def stop(self):
         """Stop playback."""
@@ -406,13 +419,15 @@ class AudioPlayer:
         if PYGAME_AVAILABLE:
             pygame.mixer.music.stop()
         
+        # Wait for any playing thread to finish
+        if self.playback_thread and self.playback_thread.is_alive():
+            # Signal stop and wait
+            time.sleep(0.1)
+        
         self.is_playing = False
         self.is_paused = False
         self.current_position = 0.0
-        
-        if self.playback_thread and self.playback_thread.is_alive():
-            # Wait a bit for thread to finish
-            time.sleep(0.2)
+        self.stop_event.clear()
     
     def pause(self):
         """Pause playback."""
@@ -426,6 +441,8 @@ class AudioPlayer:
                 pygame.mixer.music.pause()
             else:
                 pygame.mixer.music.unpause()
+                # Update start time to account for pause
+                self.start_time = time.time() - (self.current_position / self.speed)
     
     def set_speed(self, speed):
         """Set playback speed (0.5 to 2.0)."""
@@ -510,6 +527,7 @@ class TUIExplorer:
         """Main TUI loop."""
         curses.curs_set(0)  # Hide cursor
         stdscr.keypad(True)
+        stdscr.nodelay(True)  # Non-blocking getch for smooth updates
         stdscr.clear()
         
         # Enable colors if available
@@ -695,6 +713,9 @@ class TUIExplorer:
                 self.cursor = 0
                 self.waveform.waveform_data = None
                 self.needs_clear = True
+            
+            # Small sleep to prevent CPU overload
+            time.sleep(0.01)
             
     def _draw_waveform(self, stdscr, width, height, start_y):
         """Draw the waveform visualization."""
