@@ -6,6 +6,11 @@ Playback is handled by **mpv** (via its JSON IPC interface). Speed changes apply
 
 ---
 
+## 📸 Screenshot
+
+![TUI Audio Course Player](docs/tui_player_screenshot.png)
+---
+
 ## ✨ Key Features
 
 | Feature | Description |
@@ -22,11 +27,14 @@ Playback is handled by **mpv** (via its JSON IPC interface). Speed changes apply
 
 ## 🚀 Quick Start
 
-### 1. Requirements
+### 1. Clone and install mpv
 
 The only hard requirement is the mpv binary:
 
 ```bash
+git clone https://github.com/toctocduck/TUI-Audio-Course-Player.git
+cd TUI-Audio-Course-Player
+
 # Debian/Ubuntu
 sudo apt install mpv
 
@@ -44,17 +52,17 @@ No Python audio libraries are needed for playback. A standard `python3` (3.8+) i
 
 ### 2. Optional: waveform visualization
 
-The waveform needs numpy, and pydub for compressed formats (MP3, OGG, M4A...). Since Debian/Ubuntu block `pip` system-wide (PEP 668), use a venv:
+The waveform needs numpy, and pydub for compressed formats (MP3, OGG, M4A...). Since Debian/Ubuntu block `pip` system-wide (PEP 668), use a venv — any path works, this is just an example:
 
 ```bash
-python3 -m venv ~/venv_hsk
-~/venv_hsk/bin/pip install numpy pydub
+python3 -m venv ~/tui-player-venv
+~/tui-player-venv/bin/pip install numpy pydub
 ```
 
 Note: on Python 3.13+, pydub also needs `audioop-lts`:
 
 ```bash
-~/venv_hsk/bin/pip install audioop-lts
+~/tui-player-venv/bin/pip install audioop-lts
 ```
 
 WAV files work with numpy alone. Without any of these, the player still works and shows the duration (via ffprobe), just no waveform bars.
@@ -62,10 +70,11 @@ WAV files work with numpy alone. Without any of these, the player still works an
 ### 3. Run
 
 ```bash
+# basic: playback only
 python3 tui_audio_course_player.py
 
 # with the waveform venv
-~/venv_hsk/bin/python tui_audio_course_player.py
+~/tui-player-venv/bin/python tui_audio_course_player.py
 
 # debug log next to the script (tui_player_debug.log)
 python3 tui_audio_course_player.py --debug
@@ -76,6 +85,8 @@ Or with the launcher script:
 ```bash
 ./run_player.sh [--debug]
 ```
+
+The launcher uses the venv interpreter if available, otherwise falls back to the system `python3`.
 
 ---
 
@@ -107,6 +118,18 @@ Designed for language learning (e.g. HSK audio courses):
 - **Shadowing practice**: 0.75x or 0.5x without chipmunk effect
 - **Listening comprehension**: adjust speed on the fly without restarting the lesson
 - **Long lessons**: real pause, stop and position tracking
+
+Suggested layout for course materials:
+
+```
+MyCourses/
+├── Chinese/
+│   ├── HSK-1/
+│   │   ├── audios/lesson-01.mp3
+│   │   └── workbook.pdf
+│   └── HSK-2/
+└── English/
+```
 
 ---
 
