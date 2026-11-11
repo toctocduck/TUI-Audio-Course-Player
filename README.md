@@ -176,6 +176,8 @@ Run with `--debug` or set `TUI_DEBUG=1`. The log (`tui_player_debug.log`, writte
 
 Developed with the help of AI tools (Mistral Vibe). The playback backend was rewritten around mpv after diagnosing, via the built-in debug log, that the previous pygame/pydub backend could not provide live speed control or reliable pause/stop.
 
+This is a personal project. I'm not a professional software developer.
+
 ---
 
 ## 📜 License
