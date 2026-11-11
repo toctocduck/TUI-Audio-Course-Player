@@ -1,294 +1,169 @@
 # 🎧 TUI Audio Course Player
 
-**A powerful terminal-based audio player designed for language learners**
+**A terminal-based audio player for language learners, with waveform visualization and live speed control.**
 
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://opensource.org/licenses/MIT)
+Playback is handled by **mpv** (via its JSON IPC interface). Speed changes apply live, without restarting the file, and preserve the original pitch.
 
 ---
 
-## 🎯 What is this?
-
-TUI Audio Course Player is a **text-based user interface** application that helps you navigate and play audio files directly in your terminal. It's specifically designed for **language learning**, with features that help you understand accents, intonation, and speech patterns.
-
-### ✨ Key Features
+## ✨ Key Features
 
 | Feature | Description |
 |---------|-------------|
-| 📁 **File Explorer** | Navigate through directories with keyboard shortcuts |
-| ▶️ **Audio Playback** | Play MP3, WAV, OGG, FLAC, M4A files |
-| 📊 **Waveform Visualization** | See the audio waveform to identify accents and stress patterns |
-| ⚡ **Speed Control** | Slow down or speed up playback (0.5x to 2.0x) |
-| ⏱️ **Progress Bar** | Visual progress indicator with time display |
-| 📄 **Document Support** | Open PDF files with your default viewer |
-
----
-
-## 📸 Screenshot (Conceptual)
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  TUI Audio Course Player - /home/user/courses/HSK-3         │
-│  ↑↓ Navigate  → Enter  ← Back  p Play  s Stop  +/= +Speed   │
-├─────────────────────────────────────────────────────────────┤
-│  📁 audio/                                                  │
-│  📁 documents/                                              │
-│  📄 lesson-01.mp3   ★★★                                     │
-│  📄 lesson-02.mp3                                           │
-│  📄 lesson-03.mp3                                           │
-├─────────────────────────────────────────────────────────────┤
-│  Waveform Visualization                                     │
-│  ██        ██████    ██    ████████  ██                     │
-│  ██        ██████    ██    ████████  ██                     │
-│  ██████    ██████    ██    ████████  ██                     │
-│  ██████    ██████    ██    ████████  ██                     │
-│                             ▼                               │
-├─────────────────────────────────────────────────────────────┤
-│  Speed: 0.75x | Playing: 1:23 / 3:45 | 35%                  │
-│  [████████░░░░░░░░░░░░░░] 35%                               │
-└─────────────────────────────────────────────────────────────┘
-```
+| 📁 **File Explorer** | Navigate course directories with the keyboard |
+| ▶️ **Audio Playback** | MP3, WAV, OGG, FLAC, M4A via mpv |
+| ⚡ **Live Speed Control** | 0.5x–2.0x, applied instantly, pitch preserved |
+| ⏸ **Real Pause/Stop** | Playback state is controlled by mpv, not simulated |
+| 📊 **Waveform Visualization** | Optional; needs numpy (+ pydub for non-WAV files) |
+| ⏱ **Progress Bar** | Position read from the player, not estimated |
+| 📄 **Document Support** | Opens PDFs in your default viewer |
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### 1. Requirements
+
+The only hard requirement is the mpv binary:
 
 ```bash
-# Clone or download the repository
-git clone https://github.com/your-username/tui-audio-course-player.git
-cd tui-audio-course-player
-
-# Install Python packages
-pip install pygame numpy
-
-# Optional: For speed control
-pip install pydub ffmpeg-python
-```
-
-> **Note**: `pydub` requires `ffmpeg` to be installed on your system:
-> ```bash
-> # Ubuntu/Debian
-> sudo apt install ffmpeg
-> 
-> # Fedora
-> sudo dnf install ffmpeg
-> 
-> # Arch Linux
-> sudo pacman -S ffmpeg
-> 
-> # macOS (with Homebrew)
-> brew install ffmpeg
-> ```
-
-### 2. Install PDF Viewer (Optional)
-
-For opening PDF documents:
-
-```bash
-# Ubuntu/Debian
-sudo apt install evince
+# Debian/Ubuntu
+sudo apt install mpv
 
 # Fedora
-sudo dnf install evince
+sudo dnf install mpv
 
 # Arch Linux
-sudo pacman -S evince
+sudo pacman -S mpv
+
+# macOS (with Homebrew)
+brew install mpv
 ```
 
-### 3. Run the Player
+No Python audio libraries are needed for playback. A standard `python3` (3.8+) is enough; curses is in the standard library on Linux.
+
+### 2. Optional: waveform visualization
+
+The waveform needs numpy, and pydub for compressed formats (MP3, OGG, M4A...). Since Debian/Ubuntu block `pip` system-wide (PEP 668), use a venv:
+
+```bash
+python3 -m venv ~/venv_hsk
+~/venv_hsk/bin/pip install numpy pydub
+```
+
+Note: on Python 3.13+, pydub also needs `audioop-lts`:
+
+```bash
+~/venv_hsk/bin/pip install audioop-lts
+```
+
+WAV files work with numpy alone. Without any of these, the player still works and shows the duration (via ffprobe), just no waveform bars.
+
+### 3. Run
 
 ```bash
 python3 tui_audio_course_player.py
+
+# with the waveform venv
+~/venv_hsk/bin/python tui_audio_course_player.py
+
+# debug log next to the script (tui_player_debug.log)
+python3 tui_audio_course_player.py --debug
+```
+
+Or with the launcher script:
+
+```bash
+./run_player.sh [--debug]
 ```
 
 ---
 
 ## 🎹 Keyboard Shortcuts
 
-### Navigation
-
 | Key | Action |
 |-----|--------|
-| `↑` / `↓` | Move cursor up/down |
+| `↑` / `↓` | Move cursor |
 | `→` / `Enter` | Enter directory or play file |
-| `←` / `ESC` | Go back to parent directory |
-| `h` | Go to home directory |
-| `q` | Quit application |
+| `←` / `ESC` | Go back to parent directory (ESC at start quits) |
+| `h` | Back to starting directory |
+| `q` | Quit |
+| `p` | Replay selected audio file |
+| `SPACE` | Pause / resume |
+| `s` | Stop |
+| `+` / `=` | Speed up |
+| `-` / `_` | Slow down |
+| `w` | Toggle waveform |
 
-### Audio Controls
-
-| Key | Action |
-|-----|--------|
-| `p` | Play selected audio file |
-| `SPACE` | Pause/Resume playback |
-| `s` | Stop playback |
-| `+` / `=` | Increase playback speed |
-| `-` / `_` | Decrease playback speed |
-| `w` | Toggle waveform visualization |
-
-### Speed Presets
-
-The player supports **6 speed presets**:
-- 0.5x (half speed)
-- 0.75x (three-quarters speed)
-- **1.0x (normal speed)**
-- 1.25x
-- 1.5x
-- 2.0x (double speed)
+Speed presets: **0.5x, 0.75x, 1.0x, 1.25x, 1.5x, 2.0x**. Changes take effect immediately on the running file.
 
 ---
 
 ## 💡 Use Cases
 
-### 🌍 Language Learning
+Designed for language learning (e.g. HSK audio courses):
 
-The **waveform visualization** and **speed control** make this tool perfect for language learners:
-
-1. **Understand Accents**: The waveform helps you visualize stress patterns and intonation
-2. **Shadowing Practice**: Slow down audio to practice pronunciation
-3. **Listening Comprehension**: Adjust speed to match your understanding level
-4. **Transcription**: Use the progress bar to navigate precisely
-
-### 🎓 Course Materials
-
-Organize your audio courses in folders:
-
-```
-MyCourses/
-├── Chinese/
-│   ├── HSK-1/
-│   │   ├── audio/
-│   │   │   ├── lesson-01.mp3
-│   │   │   ├── lesson-02.mp3
-│   │   │   └── ...
-│   │   └── workbook.pdf
-│   └── HSK-2/
-│       └── ...
-└── English/
-    └── ...
-```
-
-### 📚 Audiobooks & Podcasts
-
-Navigate through long audio files and control playback speed for better comprehension.
+- **Accents and intonation**: speed changes keep the original pitch, so slowed-down speech stays natural
+- **Shadowing practice**: 0.75x or 0.5x without chipmunk effect
+- **Listening comprehension**: adjust speed on the fly without restarting the lesson
+- **Long lessons**: real pause, stop and position tracking
 
 ---
 
 ## ⚙️ Configuration
 
-### Supported File Types
-
-**Audio Files:**
-- `.mp3` - MP3 audio
-- `.wav` - WAV audio (best for waveform visualization)
-- `.ogg` - OGG Vorbis
-- `.flac` - FLAC lossless audio
-- `.m4a` - AAC audio
-
-**Documents:**
-- `.pdf` - PDF files
-
-### Customization
-
-You can customize supported file types by editing the `AUDIO_EXTS` and `DOC_EXTS` sets in the `tui_audio_course_player.py` file:
+Supported types are defined at the top of the script:
 
 ```python
-AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.flac', '.m4a', '.your_format'}
-DOC_EXTS = {'.pdf', '.epub', '.your_format'}
+AUDIO_EXTS = {'.mp3', '.wav', '.ogg', '.flac', '.m4a'}
+DOC_EXTS = {'.pdf'}
 ```
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Waveform Not Showing
+### No audio / player refuses to play
 
-**Solution:** Install `numpy`:
-```bash
-pip install numpy
-```
+Check that mpv is installed: `mpv --version`. The TUI shows a warning line at startup if mpv is missing. Run `mpv file.mp3` manually to verify your audio output works.
 
-**Note:** WAV files work best for waveform visualization. MP3 and other compressed formats may show approximate waveforms.
+### Speed change does nothing
 
-### Speed Control Not Working
+With the mpv backend, speed always works. If it doesn't, check the debug log (`--debug`) — the `set_property speed` IPC commands and any errors are logged there.
 
-**Solution:** Install `pydub` and `ffmpeg`:
-```bash
-pip install pydub ffmpeg-python
-# And install ffmpeg on your system (see above)
-```
+### Waveform not showing
 
-Without `pydub`, the player will use pygame's native playback at normal speed (1.0x) only.
+WAV: install numpy. MP3/OGG/M4A: install numpy + pydub (+ `audioop-lts` on Python 3.13+). This is optional and does not affect playback.
 
-### No Audio Playback
+### Debug log
 
-**Solution:**
-1. Make sure `pygame` is installed: `pip install pygame`
-2. Check your system's audio output configuration
-3. MP3 playback requires SDL2_mixer with MP3 support
-
-### Colors Not Displaying
-
-**Solution:** Most modern terminals support colors. If you're using an older terminal, try a different one (like `gnome-terminal`, `konsole`, or `alacritty`).
+Run with `--debug` or set `TUI_DEBUG=1`. The log (`tui_player_debug.log`, written next to the script) records: detected dependencies, spawned mpv commands, every IPC command, playback positions, and full tracebacks of any error.
 
 ---
 
 ## 🔒 Privacy & Security
 
-This application:
-- ✅ Does **NOT** collect any user data
-- ✅ Does **NOT** require internet access
-- ✅ Does **NOT** contain any API keys or secrets
-- ✅ Runs **completely offline**
-
-All your files stay on your computer.
+- Does **not** collect or send any data
+- Runs **completely offline**
+- No keys, secrets, or telemetry in the source
 
 ---
 
 ## 🤖 AI Assistance
 
-> **Developed with the help of Artificial Intelligence**
-
-This project was created with the assistance of AI tools (Mistral Vibe). While the AI provided code suggestions and helped implement features, all code has been:
-
-- ✅ **Reviewed** for security and quality
-- ✅ **Tested** for edge cases (non-existent files, empty directories, invalid paths, etc.)
-- ✅ **Verified** to work correctly with real audio files
-- ✅ **Documented** with clear instructions
-- ✅ **Hardened** - No API keys or secrets hardcoded in the source
-- ✅ **Protected** - `.gitignore` configured to exclude sensitive files
-
-The AI helped accelerate development, but the final result is a fully functional, safe, and useful application.
+Developed with the help of AI tools (Mistral Vibe). The playback backend was rewritten around mpv after diagnosing, via the built-in debug log, that the previous pygame/pydub backend could not provide live speed control or reliable pause/stop.
 
 ---
 
 ## 📜 License
 
-This project is open source and available under the **[MIT License](LICENSE)**.
+MIT License — see [LICENSE](LICENSE).
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **[pygame](https://www.pygame.org/)** - For audio playback
-- **[numpy](https://numpy.org/)** - For waveform processing
-- **[pydub](https://github.com/jiaaro/pydub)** - For audio speed control
-- **[curses](https://docs.python.org/3/library/curses.html)** - For terminal UI
-
----
-
-## 📞 Support
-
-For questions, issues, or feature requests:
-
-1. Check the [Troubleshooting](#-troubleshooting) section above
-2. Open an issue on GitHub
-3. Or... just enjoy using the player! 😊
-
----
-
-<p align="center">
-  Made with ❤️ for language learners and audio enthusiasts
-</p>
+- **[mpv](https://mpv.io/)** — audio playback and speed control
+- **[curses](https://docs.python.org/3/library/curses.html)** — terminal UI
+- **[numpy](https://numpy.org/)** — waveform processing
+- **[pydub](https://github.com/jiaaro/pydub)** — optional waveform decoding
